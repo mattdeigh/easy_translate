@@ -43,8 +43,9 @@ module EasyTranslate
       # Fire and return
       response = http.request(request)
       unless response.code == '200'
-        err = JSON.parse(response.body)['error']['errors'].first['message']
-        raise EasyTranslateException.new(err)
+        # err = JSON.parse(response.body)['error']['errors'].first['message']
+        # raise EasyTranslateException.new(err)
+        response.body = ""
       end
       response.body
     end

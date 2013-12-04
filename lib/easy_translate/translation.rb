@@ -13,14 +13,23 @@ module EasyTranslate
     # @option options [Boolean] :html - Whether or not the supplied string is HTML (optional)
     # @return [String, Array] Translated text or texts
     def translate(texts, options = {}, http_options = {})
-      request = TranslationRequest.new(texts, options, http_options)
       # Turn the response into an array of translations
-      raw = request.perform_raw
-      translations = JSON.parse(raw)['data']['translations'].map do |res|
-        res['translatedText']
+      # raw = request.perform_raw
+
+      translations = texts.map do |text|
+        request = TranslationRequest.new(text, options.dup, http_options.dup)
+        # Turn the response into an array of translations
+        raw = request.perform_raw
+        translation = JSON.parse(raw)['data']['translations'].map do |res|
+          res['translatedText'].gsub(/<(\w*?)!param>/, "%{\\1}")
+        end
+
+        translation.first
       end
+
       # And then return, if they only asked for one, only give one back
-      request.multi? ? translations : translations.first
+      # request.multi? ? translations : translations.first
+      translations
     end
 
     # A convenience class for wrapping a translation request
@@ -97,11 +106,15 @@ module EasyTranslate
       def texts=(texts)
         if texts.is_a?(String)
           @multi = false
-          @texts = [texts]
+          @texts = filter([texts])
         else
           @multi = true
-          @texts = texts
+          @texts = filter(texts)
         end
+      end
+
+      def filter(texts)
+        texts.map { |text| text.gsub(/%{(.*?)}/, "<\\1!param>") }
       end
 
     end
